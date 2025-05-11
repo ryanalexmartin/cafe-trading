@@ -7,7 +7,7 @@ from fugle_marketdata import WebSocketClient, RestClient
 from datetime import datetime, timedelta
 import pandas as pd
 
-fugle_api_key = "YOUR_API_KEY"
+fugle_api_key = "YOUR_FUGLE_API_KEY"  # Replace with your Fugle API key
 
 class SmaCross(Strategy):
     n1 = 10
@@ -26,7 +26,12 @@ class SmaCross(Strategy):
             self.position.close()
             self.sell()
 
-def get_historical_data(symbol, lookback_days=365):
+def get_historical_data(symbol, lookback_days=30):
+
+    # Date range must be less than one year.
+    if lookback_days > 365:
+        raise ValueError("Lookback period must be less than or equal to 365 days.")
+
     # Calculate date range
     end_date = datetime.now()
     start_date = end_date - timedelta(days=lookback_days)
@@ -36,10 +41,11 @@ def get_historical_data(symbol, lookback_days=365):
     stock = client.stock  # Stock REST API client
     
     # Get historical candles
-    response = stock.historical.candles(**{"symbol": "2330", 
+    response = stock.historical.candles(**{"symbol": symbol,
                                            "from": start_date.strftime('%Y-%m-%d'),
                                            "to": end_date.strftime('%Y-%m-%d'),
                                            "fields": "open,high,low,close,volume"})
+    print(response)
 
     # Convert to pandas DataFrame
     df = pd.DataFrame(response['data'])
@@ -59,7 +65,7 @@ def get_historical_data(symbol, lookback_days=365):
     return df
 
 
-bt = Backtest(get_historical_data('2330'), 
+bt = Backtest(get_historical_data('2330', 364), 
               SmaCross,
               cash=10000, 
               commission=.002,
